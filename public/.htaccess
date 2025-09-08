@@ -1,0 +1,24 @@
+RewriteEngine On
+
+# Security headers
+Header always set X-Content-Type-Options nosniff
+Header always set X-Frame-Options DENY
+Header always set X-XSS-Protection "1; mode=block"
+
+# Route webhook requests
+RewriteCond %{REQUEST_URI} ^/webhook/chip/?$
+RewriteRule ^(.*)$ index.php [QSA,L]
+
+# Route health check
+RewriteCond %{REQUEST_URI} ^/webhook/health/?$
+RewriteRule ^(.*)$ index.php?action=health [QSA,L]
+
+# Deny access to sensitive files
+<FilesMatch "\.(env|log|md)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Hide PHP errors in production
+php_flag display_errors Off
+php_flag log_errors On
