@@ -1,6 +1,14 @@
 # Chip-to-Coda Webhook Relay
 
+[![PHP Version](https://img.shields.io/badge/PHP-7.4%2B-blue.svg)](https://php.net/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![cPanel Compatible](https://img.shields.io/badge/cPanel-Compatible-orange.svg)](https://cpanel.net/)
+[![GitHub Issues](https://img.shields.io/github/issues/salehuddin/chip-coda-webhook-relay)](https://github.com/salehuddin/chip-coda-webhook-relay/issues)
+[![GitHub Stars](https://img.shields.io/github/stars/salehuddin/chip-coda-webhook-relay)](https://github.com/salehuddin/chip-coda-webhook-relay/stargazers)
+
 A lightweight PHP middleware service that receives webhook notifications from Chip payment gateway and forwards them to Coda.io with proper Bearer token authentication.
+
+> 🚀 **Production Ready**: Currently deployed and handling live webhook traffic
 
 ## Problem Solved
 
@@ -191,14 +199,55 @@ Use the health check endpoint to verify:
 - [ ] Monitor logs for initial requests
 - [ ] Set up log rotation if needed
 
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
+
+### Development Setup
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/salehuddin/chip-coda-webhook-relay.git
+   cd chip-coda-webhook-relay
+   ```
+
+2. Copy the environment configuration:
+   ```bash
+   cp config/.env.example config/.env
+   ```
+
+3. Configure your test environment in `.env`
+
+4. Set up a local web server or use cPanel for testing
+
+Please make sure to:
+- Follow existing code style and patterns
+- Test your changes thoroughly
+- Update documentation as needed
+- Add tests for new functionality
+
 ## Support
 
 For issues and questions:
-1. Check the logs in the `logs/` directory
-2. Review the health check endpoint response
-3. Verify configuration settings
-4. Consult the troubleshooting section above
+
+1. **GitHub Issues**: [Report bugs or request features](https://github.com/salehuddin/chip-coda-webhook-relay/issues)
+2. **Documentation**: Check the [project documentation](https://github.com/salehuddin/chip-coda-webhook-relay/blob/main/WARP.md)
+3. **Troubleshooting**: 
+   - Check the logs in the `logs/` directory
+   - Review the health check endpoint response
+   - Verify configuration settings
+   - Consult the troubleshooting section above
+
+## Acknowledgments
+
+- [Chip](https://chip.com.my/) - Payment gateway service
+- [Coda.io](https://coda.io/) - Document and workflow platform
+- Built for the Malaysian fintech ecosystem
 
 ## License
 
-MIT License - see LICENSE file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+**Made with ❤️ for seamless payment integrations**
