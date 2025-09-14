@@ -62,6 +62,7 @@ class Config {
             
             // Optional settings with defaults
             'chip_webhook_secret' => $this->getEnv('CHIP_WEBHOOK_SECRET', ''),
+            'chip_public_key' => $this->getEnv('CHIP_PUBLIC_KEY', ''),
             'log_level' => strtoupper($this->getEnv('LOG_LEVEL', 'INFO')),
             
             // Technical settings
@@ -140,7 +141,7 @@ class Config {
         
         if (!$includeSensitive) {
             // Mask sensitive values
-            $sensitive = ['coda_bearer_token', 'chip_webhook_secret'];
+            $sensitive = ['coda_bearer_token', 'chip_webhook_secret', 'chip_public_key'];
             foreach ($sensitive as $key) {
                 if (isset($config[$key]) && !empty($config[$key])) {
                     $config[$key] = '***masked***';
@@ -162,7 +163,8 @@ class Config {
      * Check if signature verification is enabled
      */
     public function isSignatureVerificationEnabled() {
-        return $this->get('signature_verification') && !empty($this->get('chip_webhook_secret'));
+        return $this->get('signature_verification') && 
+               (!empty($this->get('chip_webhook_secret')) || !empty($this->get('chip_public_key')));
     }
 
     /**
@@ -176,6 +178,8 @@ class Config {
             mkdir($logDir, 0755, true);
         }
         
-        return $logDir . '/' . $type . '.log';
+        // Use .txt extension for WordPress/LiteSpeed compatibility
+        $extension = $this->get('log_file_extension', 'txt');
+        return $logDir . '/' . $type . '.' . $extension;
     }
 }

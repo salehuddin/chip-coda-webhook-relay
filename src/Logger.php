@@ -197,11 +197,19 @@ class Logger {
             }
             
             // Write to log file
-            file_put_contents($logFile, $entry, FILE_APPEND | LOCK_EX);
+            $result = file_put_contents($logFile, $entry, FILE_APPEND | LOCK_EX);
+            
+            // Debug: log success/failure to PHP error log temporarily
+            if ($result === false) {
+                error_log("WEBHOOK_LOG_DEBUG: Failed to write to " . $logFile);
+            } else {
+                error_log("WEBHOOK_LOG_DEBUG: Successfully wrote " . $result . " bytes to " . $logFile);
+            }
             
         } catch (Exception $e) {
             // Fallback to error_log if file writing fails
             error_log("Logger write failed: " . $e->getMessage());
+            error_log("WEBHOOK_LOG_DEBUG: Exception details - " . $e->getTraceAsString());
             error_log($entry);
         }
     }

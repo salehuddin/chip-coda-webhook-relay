@@ -271,12 +271,14 @@ class Validator {
     }
     
     /**
-     * Verify webhook signature (basic HMAC implementation)
+     * Verify webhook signature (supports both HMAC and RSA/ECDSA)
      */
     private function verifySignature() {
         $secret = $this->config->get('chip_webhook_secret');
-        if (empty($secret)) {
-            return true; // No secret configured, skip verification
+        $publicKey = $this->config->get('chip_public_key');
+        
+        if (empty($secret) && empty($publicKey)) {
+            return true; // No secret or public key configured, skip verification
         }
         
         // Get signature from headers (common header names)
@@ -304,20 +306,16 @@ class Validator {
         // Get request payload
         $payload = file_get_contents('php://input');
         
-        // Calculate expected signature (try different algorithms)
-        $algorithms = ['sha256', 'sha1', 'md5'];
+        // Try public key verification first (RSA/ECDSA)
+        if (!empty($publicKey)) {
+            if ($this->verifyPublicKeySignature($payload, $providedSignature, $publicKey)) {
+                return true;
+            }
+        }
         
-        foreach ($algorithms as $algorithm) {
-            $expectedSignature = hash_hmac($algorithm, $payload, $secret);
-            $expectedSignatureWithPrefix = $algorithm . '=' . $expectedSignature;
-            
-            // Compare signatures (time-safe comparison)
-            if ($this->hashEquals($providedSignature, $expectedSignature) ||
-                $this->hashEquals($providedSignature, $expectedSignatureWithPrefix)) {
-                
-                $this->logger->debug('Signature verification successful', [
-                    'algorithm' => $algorithm
-                ]);
+        // Fallback to HMAC verification if public key fails or not configured
+        if (!empty($secret)) {
+            if ($this->verifyHmacSignature($payload, $providedSignature, $secret)) {
                 return true;
             }
         }
@@ -328,6 +326,129 @@ class Validator {
         ]);
         
         return false;
+    }
+    
+    /**
+     * Verify signature using RSA/ECDSA public key
+     */
+    private function verifyPublicKeySignature($payload, $signature, $publicKey) {
+        try {
+            // Remove any prefix from signature (e.g., "sha256=")
+            $cleanSignature = $signature;
+            if (strpos($signature, '=') !== false) {
+                list($algorithm, $cleanSignature) = explode('=', $signature, 2);
+            }
+            
+            // Decode signature from base64
+            $decodedSignature = base64_decode($cleanSignature);
+            if ($decodedSignature === false) {
+                // Try hex decode if base64 fails
+                $decodedSignature = hex2bin($cleanSignature);
+                if ($decodedSignature === false) {
+                    $this->logger->warning('Unable to decode signature');
+                    return false;
+                }
+            }
+            
+            // Prepare public key
+            $publicKeyResource = $this->preparePublicKey($publicKey);
+            if (!$publicKeyResource) {
+                return false;
+            }
+            
+            // Try different hash algorithms
+            $algorithms = [OPENSSL_ALGO_SHA256, OPENSSL_ALGO_SHA1, OPENSSL_ALGO_SHA512];
+            
+            foreach ($algorithms as $algorithm) {
+                $result = openssl_verify($payload, $decodedSignature, $publicKeyResource, $algorithm);
+                
+                if ($result === 1) {
+                    $this->logger->debug('Public key signature verification successful', [
+                        'algorithm' => $this->getAlgorithmName($algorithm)
+                    ]);
+                    return true;
+                } elseif ($result === -1) {
+                    $this->logger->error('OpenSSL error during signature verification: ' . openssl_error_string());
+                }
+            }
+            
+            return false;
+            
+        } catch (Exception $e) {
+            $this->logger->error('Public key signature verification error: ' . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Verify signature using HMAC
+     */
+    private function verifyHmacSignature($payload, $signature, $secret) {
+        // Calculate expected signature (try different algorithms)
+        $algorithms = ['sha256', 'sha1', 'md5'];
+        
+        foreach ($algorithms as $algorithm) {
+            $expectedSignature = hash_hmac($algorithm, $payload, $secret);
+            $expectedSignatureWithPrefix = $algorithm . '=' . $expectedSignature;
+            
+            // Compare signatures (time-safe comparison)
+            if ($this->hashEquals($signature, $expectedSignature) ||
+                $this->hashEquals($signature, $expectedSignatureWithPrefix)) {
+                
+                $this->logger->debug('HMAC signature verification successful', [
+                    'algorithm' => $algorithm
+                ]);
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Prepare public key resource from PEM string
+     */
+    private function preparePublicKey($publicKeyPem) {
+        try {
+            // Ensure proper PEM format
+            $publicKeyPem = trim($publicKeyPem);
+            
+            // Add PEM headers if missing
+            if (strpos($publicKeyPem, '-----BEGIN') === false) {
+                $publicKeyPem = "-----BEGIN PUBLIC KEY-----\n" . 
+                               chunk_split($publicKeyPem, 64, "\n") . 
+                               "-----END PUBLIC KEY-----\n";
+            }
+            
+            $publicKeyResource = openssl_pkey_get_public($publicKeyPem);
+            
+            if (!$publicKeyResource) {
+                $this->logger->error('Unable to load public key: ' . openssl_error_string());
+                return false;
+            }
+            
+            return $publicKeyResource;
+            
+        } catch (Exception $e) {
+            $this->logger->error('Public key preparation error: ' . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Get algorithm name from OpenSSL constant
+     */
+    private function getAlgorithmName($algorithm) {
+        switch ($algorithm) {
+            case OPENSSL_ALGO_SHA1:
+                return 'SHA1';
+            case OPENSSL_ALGO_SHA256:
+                return 'SHA256';
+            case OPENSSL_ALGO_SHA512:
+                return 'SHA512';
+            default:
+                return 'Unknown';
+        }
     }
     
     /**

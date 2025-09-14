@@ -26,3 +26,18 @@ composer.lock
 # Backup files
 *.bak
 *.backup
+*.old
+
+# Archive files (deployment packages)
+*.zip
+*.tar
+*.tar.gz
+*.rar
+
+# Local test files
+test_*.php
+debug_*.php
+
+# Deployment-specific files
+deploy.sh
+deploy.bat
