@@ -36,6 +36,46 @@ class WebhookRelay {
             $payload = $this->validator->getPayload();
             $headers = $this->validator->getHeaders();
             
+            // Filter logic: Check if payment matches allowed reference patterns
+            $filterPrefix = $this->config->get('filter_reference_prefix');
+            $filterRegex = $this->config->get('filter_reference_regex');
+            
+            if (!empty($filterPrefix) || !empty($filterRegex)) {
+                $data = json_decode($payload, true);
+                $reference = $data['reference'] ?? '';
+                
+                // 1. Check Prefix
+                if (!empty($filterPrefix)) {
+                    // Support comma-separated prefixes (OR logic)
+                    $prefixes = explode(',', $filterPrefix);
+                    $matched = false;
+                    foreach ($prefixes as $prefix) {
+                        $prefix = trim($prefix);
+                        if ($prefix !== '' && strpos($reference, $prefix) === 0) {
+                            $matched = true;
+                            break;
+                        }
+                    }
+                    
+                    if (!$matched) {
+                        $this->logger->info('Webhook skipped: Reference does not match filter prefix', [
+                            'reference' => $reference,
+                            'required_prefixes' => $filterPrefix
+                        ]);
+                        return $this->sendSuccessResponse('Webhook skipped (filtered)');
+                    }
+                }
+                
+                // 2. Check Regex
+                if (!empty($filterRegex) && !preg_match($filterRegex, $reference)) {
+                    $this->logger->info('Webhook skipped: Reference does not match filter regex', [
+                        'reference' => $reference,
+                        'required_regex' => $filterRegex
+                    ]);
+                    return $this->sendSuccessResponse('Webhook skipped (filtered)');
+                }
+            }
+            
             $this->logger->debug('Incoming webhook received', [
                 'payload_size' => strlen($payload),
                 'content_type' => $headers['content-type'] ?? 'unknown',

@@ -116,6 +116,8 @@ Chip Gateway → WebhookRelay → Coda.io
 - `CHIP_PUBLIC_KEY`: For RSA/ECDSA signature verification (recommended)
 - `ALLOWED_IPS`: Comma-separated IP whitelist
 - `SIGNATURE_VERIFICATION`: Enable/disable signature checking
+- `FILTER_REFERENCE_PREFIX`: Filter webhooks by reference prefix (e.g. INV-)
+- `FILTER_REFERENCE_REGEX`: Filter webhooks by regex pattern
 
 ### Configuring Chip Public Key
 To use RSA/ECDSA signature verification (recommended):

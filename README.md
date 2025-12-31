@@ -118,6 +118,8 @@ Returns service status and configuration info
 | `CODA_WEBHOOK_URL` | Target Coda.io webhook endpoint | Yes |
 | `CHIP_WEBHOOK_SECRET` | Optional signature verification secret | No |
 | `LOG_LEVEL` | Logging verbosity (DEBUG, INFO, ERROR) | No (default: INFO) |
+| `FILTER_REFERENCE_PREFIX` | Comma-separated prefixes to allow (e.g. INV-,INVM-) | No |
+| `FILTER_REFERENCE_REGEX` | Regex pattern to allow (e.g. /^INV-\d+$/) | No |
 
 ### Advanced Settings
 
