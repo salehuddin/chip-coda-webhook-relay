@@ -75,6 +75,8 @@ class Config {
             // Security settings
             'allowed_ips' => array_filter(explode(',', $this->getEnv('ALLOWED_IPS', ''))),
             'signature_verification' => filter_var($this->getEnv('SIGNATURE_VERIFICATION', 'false'), FILTER_VALIDATE_BOOLEAN),
+            'filter_reference_prefix' => $this->getEnv('FILTER_REFERENCE_PREFIX', ''),
+            'filter_reference_regex' => $this->getEnv('FILTER_REFERENCE_REGEX', ''),
             
             // Logging settings
             'log_directory' => $this->getEnv('LOG_DIRECTORY', dirname(__DIR__) . '/logs'),
