@@ -2,6 +2,8 @@
 /**
  * WebhookRelay class for Chip-to-Coda Webhook Relay
  * Core functionality to receive, process, and forward webhooks
+ * 
+ * FIXED: Added CA bundle support for SSL certificate verification
  */
 
 class WebhookRelay {
@@ -201,6 +203,7 @@ class WebhookRelay {
     
     /**
      * Make HTTP request using cURL
+     * FIXED: Added CA bundle support
      */
     private function makeHttpRequest($url, $payload, $headers) {
         $ch = curl_init();
@@ -219,6 +222,13 @@ class WebhookRelay {
             CURLOPT_FOLLOWLOCATION => false,
             CURLOPT_MAXREDIRS => 0
         ];
+        
+        // FIX: Add CA bundle if it exists
+        $caBundlePath = __DIR__ . '/cacert.pem';
+        if (file_exists($caBundlePath)) {
+            $options[CURLOPT_CAINFO] = $caBundlePath;
+            $this->logger->debug('Using CA bundle', ['path' => $caBundlePath]);
+        }
         
         curl_setopt_array($ch, $options);
         
@@ -307,7 +317,8 @@ class WebhookRelay {
                     'bearer_token_configured' => !empty($config['coda_bearer_token']),
                     'signature_verification' => $config['signature_verification'],
                     'log_level' => $config['log_level'],
-                    'max_payload_size' => $config['max_payload_size']
+                    'max_payload_size' => $config['max_payload_size'],
+                    'ca_bundle_exists' => file_exists(__DIR__ . '/cacert.pem')
                 ]
             ];
             
